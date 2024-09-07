@@ -12,41 +12,42 @@
   <meta property="og:image:height" content="128" />
   <link rel="stylesheet" href="./style.css" />
 </head>
-  <body>
-    <div class="player-container"></div>
-    <div class="reproductor-buttons">
-      <!-- Reproductores de video e imagen en la pantalla principal -->
-      <div class="media-display">
-        <!-- Imagen estándar de inicio -->
-        <video id="videoPlayer" controls hidden></video>
-        <img id="imageDisplay" src="/Img/Empathia.png" alt="Empathia" />
+<body>
+  <div class="player-container"></div>
+  <div class="reproductor-buttons">
+    <!-- Reproductores de video e imagen en la pantalla principal -->
+    <div class="media-display">
+      <!-- Imagen estándar de inicio -->
+      <video id="videoPlayer" controls hidden></video>
+      <img id="imageDisplay" src="/Img/Empathia.png" alt="Empathia" />
+    </div>
+    <div class="playlist-section">
+      <div class="second-screen-section">
+        <button id="activateSecondScreenBtn">Activar segunda pantalla</button>
       </div>
-      <div class="playlist-section">
-        <div class="second-screen-section">
-          <button id="activateSecondScreenBtn">Activar segunda pantalla</button>
-        </div>
-        <h3>Playlist</h3>
-        <ul id="playlist" class="draggable-list"></ul>
-        <div></div>
+      <h3>Playlist</h3>
+      <ul id="playlist" class="draggable-list"></ul>
+      <div></div>
+    </div>
+  </div>
+  <div class="upload-section">
+    <div class="drag-section">
+      <h2>Subir archivos</h2>
+      <button id="uploadBtn">Subir Video/Imagen</button>
+      <input
+        type="file"
+        id="fileInput"
+        accept="video/*,image/*"
+        multiple
+        hidden
+      />
+
+      <div class="drag-drop-area" id="dragDropArea">
+        Drag & Drop archivos aquí
       </div>
     </div>
-    <div class="upload-section">
-      <div class="drag-section">
-        <h2>Subir archivos</h2>
-        <button id="uploadBtn">Subir Video/Imagen</button>
-        <input
-          type="file"
-          id="fileInput"
-          accept="video/*,image/*"
-          multiple
-          hidden
-        />
+  </div>
 
-        <div class="drag-drop-area" id="dragDropArea">
-          Drag & Drop archivos aquí
-        </div>
-      </div>
-    </div>
-
-    <script src="./script.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script
+  <script src="./script.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</body>
