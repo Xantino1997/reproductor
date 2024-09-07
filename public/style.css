@@ -188,7 +188,14 @@ li button:hover {
 }
 
 
-/* Estilos generales que ya tienes */
+.dragging {
+  opacity: 0.5;
+}
+
+.drag-over {
+  border: 2px dashed #ccc;
+}
+
 
 /* Adaptación para tabletas (pantallas entre 481px y 768px) */
 @media (max-width: 768px) {

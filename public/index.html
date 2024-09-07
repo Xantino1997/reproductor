@@ -1,57 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Media Player</title>
-    <link rel="stylesheet" href="./style.css" />
-  </head>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Media Player</title>
+  <!-- Favicon -->
+  <link rel="icon" href="./Img/Empathia.png" type="image/png" />
+  <!-- Meta tag for link preview image -->
+  <meta property="og:image" content="./Img/Empathia.png" />
+  <meta property="og:image:type" content="image/png" />
+  <meta property="og:image:width" content="128" />
+  <meta property="og:image:height" content="128" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
   <body>
-    <div class="player-container">
-
-    </div>
+    <div class="player-container"></div>
     <div class="reproductor-buttons">
       <!-- Reproductores de video e imagen en la pantalla principal -->
-     
       <div class="media-display">
+        <!-- Imagen estándar de inicio -->
         <video id="videoPlayer" controls hidden></video>
-        <img id="imageDisplay" hidden />
+        <img id="imageDisplay" src="/Img/Empathia.png" alt="Empathia" />
       </div>
       <div class="playlist-section">
         <div class="second-screen-section">
           <button id="activateSecondScreenBtn">Activar segunda pantalla</button>
         </div>
         <h3>Playlist</h3>
-        <ul id="playlist"></ul>
-        <!-- <button id="savePlaylistBtn">Save Playlist</button>
-        <button id="loadPlaylistBtn">Load Playlist</button>
-        <input type="text" id="playlistName" placeholder="Playlist Name" /> -->
-        <div>
-        
-        </div>
-      </div>    
-
-    </div>
-    <div class="upload-section">
-    <div class="drag-section">
-      <h2>Subir archivos</h2>
-      <button id="uploadBtn">Subir Video/Image</button>
-      <input
-        type="file"
-        id="fileInput"
-        accept="video/*,image/*"
-        multiple
-        hidden
-      />
-      <div class="drag-drop-area" id="dragDropArea">
-        Drag & Drop archivos aqui
+        <ul id="playlist" class="draggable-list"></ul>
+        <div></div>
       </div>
     </div>
-  </div>
+    <div class="upload-section">
+      <div class="drag-section">
+        <h2>Subir archivos</h2>
+        <button id="uploadBtn">Subir Video/Imagen</button>
+        <input
+          type="file"
+          id="fileInput"
+          accept="video/*,image/*"
+          multiple
+          hidden
+        />
+
+        <div class="drag-drop-area" id="dragDropArea">
+          Drag & Drop archivos aquí
+        </div>
+      </div>
     </div>
-  
 
     <script src="./script.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  </body>
-</html>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script
