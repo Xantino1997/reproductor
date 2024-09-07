@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Media Player</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="player-container">
+
+    </div>
+    <div class="reproductor-buttons">
+      <!-- Reproductores de video e imagen en la pantalla principal -->
+     
+      <div class="media-display">
+        <video id="videoPlayer" controls hidden></video>
+        <img id="imageDisplay" hidden />
+      </div>
+      <div class="playlist-section">
+        <div class="second-screen-section">
+          <button id="activateSecondScreenBtn">Activar segunda pantalla</button>
+        </div>
+        <h3>Playlist</h3>
+        <ul id="playlist"></ul>
+        <!-- <button id="savePlaylistBtn">Save Playlist</button>
+        <button id="loadPlaylistBtn">Load Playlist</button>
+        <input type="text" id="playlistName" placeholder="Playlist Name" /> -->
+        <div>
+        
+        </div>
+      </div>    
+
+    </div>
+    <div class="upload-section">
+    <div class="drag-section">
+      <h2>Subir archivos</h2>
+      <button id="uploadBtn">Subir Video/Image</button>
+      <input
+        type="file"
+        id="fileInput"
+        accept="video/*,image/*"
+        multiple
+        hidden
+      />
+      <div class="drag-drop-area" id="dragDropArea">
+        Drag & Drop archivos aqui
+      </div>
+    </div>
+  </div>
+    </div>
+  
+
+    <script src="./script.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  </body>
+</html>
