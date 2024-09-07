@@ -186,3 +186,129 @@ li button:hover {
   max-width: 100%;
   max-height: 100%;
 }
+
+
+/* Estilos generales que ya tienes */
+
+/* Adaptación para tabletas (pantallas entre 481px y 768px) */
+@media (max-width: 768px) {
+  .player-container {
+    flex-direction: column;
+    padding: 10px;
+  }
+
+  .media-display {
+    width: 100%; /* La visualización del media ocupa el 100% del ancho en tablets */
+    height: auto; /* Ajusta la altura para mantener la proporción */
+  }
+
+  .playlist-section {
+    width: 100%; /* El playlist ocupará todo el ancho disponible */
+    height: auto; /* La altura se ajusta automáticamente */
+  }
+
+  .reproductor-buttons {
+    flex-direction: column;
+    padding: 5px;
+  }
+
+  .upload-section {
+    width: 100%;
+    padding: 5px;
+  }
+
+  .drag-drop-area {
+    padding: 20px;
+    font-size: 14px;
+  }
+
+  button {
+    font-size: 14px;
+    padding: 8px 16px;
+  }
+
+  .second-screen {
+    width: 80%; /* Ajusta el ancho de la segunda pantalla al 80% del contenedor */
+    height: auto;
+    left: 10%; /* Centra la segunda pantalla */
+    top: 10%; /* Ajusta la posición desde la parte superior */
+  }
+
+  .second-screen-header {
+    padding: 5px;
+  }
+
+  .second-screen-content {
+    padding: 5px;
+  }
+}
+
+/* Adaptación para móviles (pantallas de hasta 480px) */
+@media (max-width: 480px) {
+  .player-container {
+    padding: 5px;
+    flex-direction: column;
+  }
+
+  .media-display {
+    width: 100%;
+    height: auto; /* Ajusta automáticamente la altura para mantener la proporción */
+  }
+
+  .playlist-section {
+    width: 100%;
+    height: auto; /* Permite que la lista de reproducción se ajuste automáticamente */
+    padding: 10px;
+  }
+
+  .upload-section {
+    width: 100%;
+    padding: 5px;
+  }
+
+  .drag-section h2 {
+    font-size: 18px;
+  }
+
+  .drag-drop-area {
+    padding: 10px;
+    font-size: 12px;
+  }
+
+  .reproductor-buttons {
+    flex-direction: column;
+    padding: 5px;
+  }
+
+  button {
+    font-size: 12px;
+    padding: 8px 12px;
+  }
+
+  ul {
+    font-size: 12px;
+  }
+
+  li {
+    padding: 8px;
+  }
+
+  .second-screen {
+    width: 100%;
+    height: auto;
+    top: 5%;
+    left: 0;
+    right: 0;
+    margin: auto;
+  }
+
+  .second-screen-header {
+    padding: 5px;
+    font-size: 14px;
+  }
+
+  .second-screen-content {
+    padding: 5px;
+    font-size: 14px;
+  }
+}
