@@ -19,6 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
 
+
   recognition.onresult = (event) => {
     const command = event.results[0][0].transcript.toLowerCase();
     console.log('Comando recibido:', command);
@@ -64,6 +65,8 @@ document.addEventListener('DOMContentLoaded', () => {
     syncWithSecondScreen('stop');
   }
 
+  
+
   // Función para abrir o maximizar la segunda pantalla
   function toggleSecondScreen() {
     if (!secondScreenWindow || secondScreenWindow.closed) {
@@ -72,6 +75,10 @@ document.addEventListener('DOMContentLoaded', () => {
       maximizeSecondScreen();
     }
   }
+
+  activateSecondScreenBtn.addEventListener('click', () => {
+    toggleSecondScreen();
+  });
 
   function openSecondScreen() {
     secondScreenWindow = window.open('', 'SecondScreen', 'width=800,height=600');

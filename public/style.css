@@ -15,6 +15,7 @@ h3 {
   display: flex;
   justify-content: space-between;
   padding: 20px;
+  background-color: #12496e;
 }
 
 .upload-section,
@@ -25,22 +26,21 @@ h3 {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   width: 100%;
   align-items: center;
-
 }
-.drag-section{
+.drag-section {
   text-align: center;
+  background-color: #12496e;
+
 }
 .second-screen-section {
   margin-bottom: 20px;
   width: 100%;
-  background-color: rgba(0, 0, 0, 0.1);
   text-align: center;
 }
 .upload-section h2,
 .playlist-section h3 {
   margin-bottom: 20px;
   width: 100%;
-  background-color: rgba(0, 0, 0, 0.1);
   text-align: center;
 }
 
@@ -49,6 +49,9 @@ h3 {
   width: 15em;
   height: 30em;
   overflow: auto;
+  border: 3px solid #1b0bb0;
+  border-radius: 0px;
+  background-color: rgba(0, 0, 0, 0.1);
 }
 
 .media-display {
@@ -65,6 +68,7 @@ h3 {
   width: 100%; /* Ajusta el ancho del video o imagen al ancho del contenedor */
   height: 100%; /* Ajusta la altura del video o imagen al alto del contenedor */
   object-fit: cover; /* Ajusta el contenido para cubrir el área del contenedor sin deformar la relación de aspecto */
+  border: 3px solid #1b0bb0;
 }
 
 .reproductor-buttons {
@@ -77,7 +81,7 @@ h3 {
 }
 
 button {
-  background-color: #007bff;
+  background-color: #2a9d8f;
   color: white;
   padding: 10px 20px;
   border: none;
@@ -85,9 +89,24 @@ button {
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
+.uploadBtn {
+  background-color: #fff;
+  margin-top:15px;
+  color: red;
+  padding: 10px 20px;
+  border: blue solid 3px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  font-weight: bold;
+}
 
+.uploadBtn:hover {
+  background-color: red;
+  color: #fff;
+}
 button:hover {
-  background-color: #0056b3;
+  background-color: #007bff;
 }
 
 .drag-drop-area {
@@ -187,7 +206,6 @@ li button:hover {
   max-height: 100%;
 }
 
-
 .dragging {
   opacity: 0.5;
 }
@@ -195,7 +213,6 @@ li button:hover {
 .drag-over {
   border: 2px dashed #ccc;
 }
-
 
 /* Adaptación para tabletas (pantallas entre 481px y 768px) */
 @media (max-width: 768px) {
