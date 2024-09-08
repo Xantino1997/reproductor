@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<html lang="es">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -11,9 +12,51 @@
   <meta property="og:image:width" content="128" />
   <meta property="og:image:height" content="128" />
   <link rel="stylesheet" href="./style.css" />
+  <style>
+    /* CSS para el mensaje deslizante */
+    .scrolling-message {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background-color: black;
+      color: #00c8ff; /* Color celeste */
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Sombra opcional */
+      padding: 10px;
+    }
+
+    .scrolling-message span {
+      display: inline-block;
+      padding-left: 100%;
+      animation: scroll-left 10s linear infinite;
+    }
+
+    @keyframes scroll-left {
+      from {
+        transform: translateX(100%);
+      }
+      to {
+        transform: translateX(-100%);
+      }
+    }
+
+    .player-container {
+      position: relative; /* Necesario para posicionar el mensaje deslizante */
+    }
+  </style>
 </head>
 <body>
-  <div class="player-container"></div>
+  <div class="player-container">
+    <div class="visor" id="">
+      <div>Reproductor detenido</div>
+    </div>
+    <div class="scrolling-message" id="scrollingMessage">
+      <span>Este es el nombre del elemento actual en la playlist.</span>
+    </div>
+  </div>
   <div class="reproductor-buttons">
     <!-- Reproductores de video e imagen en la pantalla principal -->
     <div class="media-display">
@@ -23,11 +66,11 @@
     </div>
     <div class="playlist-section">
       <div class="second-screen-section">
+        <br />
         <button id="activateSecondScreenBtn">Activar segunda pantalla</button>
+        <h3>Playlist</h3>
       </div>
-      <h3>Playlist</h3>
       <ul id="playlist" class="draggable-list"></ul>
-      <div></div>
     </div>
   </div>
   <div class="upload-section">
@@ -40,7 +83,6 @@
         multiple
         hidden
       />
-
       <div class="drag-drop-area" id="dragDropArea">
         Drag & Drop archivos aquí
       </div>
@@ -49,4 +91,17 @@
 
   <script src="./script.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script>
+    // Ejemplo de JavaScript para actualizar el mensaje deslizante
+    function updateScrollingMessage(text) {
+      const scrollingMessage = document.getElementById('scrollingMessage');
+      scrollingMessage.querySelector('span').textContent = text;
+    }
+
+    // Ejemplo de cómo usar la función con el nombre del elemento activo
+    // Puedes reemplazar esto con el nombre real del elemento seleccionado
+    const activeItemName = "Nombre del Elemento en Playlist";
+    updateScrollingMessage(`Actualmente viendo: ${activeItemName}`);
+  </script>
 </body>
+</html>

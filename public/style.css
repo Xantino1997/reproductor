@@ -15,12 +15,24 @@ h3 {
   display: flex;
   justify-content: space-between;
   padding: 20px;
-  background-color: #12496e;
+  background-color: #4a51cf;
 }
-
+.visor{
+  width: 100%;
+  align-items: center;
+  text-align: center;
+  color: transparent;
+  font-weight: bold;
+}
 .upload-section,
 .playlist-section {
-  background-color: #fff;
+  padding: 2px;
+  border-radius: 10px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  align-items: center;
+}
+.playlist-section {
   padding: 2px;
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
@@ -29,16 +41,18 @@ h3 {
 }
 .drag-section {
   text-align: center;
-  background-color: #12496e;
+  background-color: #4a51cf;
 
 }
 .second-screen-section {
   margin-bottom: 20px;
   width: 100%;
   text-align: center;
+  background:#eee;
 }
 .upload-section h2,
 .playlist-section h3 {
+  color: orange;
   margin-bottom: 20px;
   width: 100%;
   text-align: center;
@@ -48,10 +62,10 @@ h3 {
   padding: 20px;
   width: 15em;
   height: 30em;
-  overflow: auto;
-  border: 3px solid #1b0bb0;
+  overflow: auto;  
   border-radius: 0px;
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color:#8a8b9c;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
 }
 
 .media-display {
@@ -63,12 +77,12 @@ h3 {
   background-color: #000; /* Opcional: color de fondo para el área de visualización */
 }
 
+
 .media-display video,
 .media-display img {
   width: 100%; /* Ajusta el ancho del video o imagen al ancho del contenedor */
   height: 100%; /* Ajusta la altura del video o imagen al alto del contenedor */
   object-fit: cover; /* Ajusta el contenido para cubrir el área del contenedor sin deformar la relación de aspecto */
-  border: 3px solid #1b0bb0;
 }
 
 .reproductor-buttons {
@@ -76,37 +90,47 @@ h3 {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #e6f7ff;
+  background-color: #333;
   padding: 2px;
 }
 
+
 button {
-  background-color: #2a9d8f;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  background-color: #eb8e38; /* Color de fondo al pasar el mouse */
+  box-shadow: 0 0 15px rgba(255, 105, 0, 0.6); /* Efecto de resplandor */
+}
+
+button:hover {
+  background-color:orange;
   color: white;
   padding: 10px 20px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease; 
 }
-.uploadBtn {
-  background-color: #fff;
-  margin-top:15px;
-  color: red;
+.uploadBtn:hover{
+  background-color:#5fd12e;
+  margin-top:5px;
+  color: white;
   padding: 10px 20px;
-  border: blue solid 3px;
   border-radius: 5px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: all 0.3s ease; 
   font-weight: bold;
 }
 
-.uploadBtn:hover {
-  background-color: red;
-  color: #fff;
-}
-button:hover {
-  background-color: #007bff;
+
+.uploadBtn {
+  margin-top:7px;
+  background-color: red; /* Color de fondo al pasar el mouse */
+  color: #fff; /* Color del texto al pasar el mouse */
+  box-shadow: 0 0 15px rgba(255, 0, 0, 0.6); /* Efecto de resplandor */
+  font-weight: bold;
 }
 
 .drag-drop-area {
