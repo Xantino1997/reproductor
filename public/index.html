@@ -25,13 +25,13 @@
       white-space: nowrap;
       overflow: hidden;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.5); /* Sombra opcional */
-      padding: 10px;
+      margin-right: 20px;
     }
 
     .scrolling-message span {
       display: inline-block;
       padding-left: 100%;
-      animation: scroll-left 20s linear infinite;
+      animation: scroll-left 40s linear infinite;
     }
 
     @keyframes scroll-left {
@@ -45,6 +45,7 @@
 
     .player-container {
       position: relative; /* Necesario para posicionar el mensaje deslizante */
+      text-align:center;
     }
   </style>
 </head>
@@ -58,11 +59,12 @@
     </div>
   </div>
   <div class="reproductor-buttons">
-    <!-- Reproductores de video e imagen en la pantalla principal -->
+    <!-- Reproductores de video, imagen y audio en la pantalla principal -->
     <div class="media-display">
       <!-- Imagen estándar de inicio -->
       <video id="videoPlayer" controls hidden></video>
       <img id="imageDisplay" src="/Img/Empathia.png" alt="Empathia" />
+      <audio id="audioPlayer" controls hidden></audio> <!-- Elemento de audio -->
     </div>
     <div class="playlist-section">
       <div class="second-screen-section">
@@ -75,11 +77,11 @@
   </div>
   <div class="upload-section">
     <div class="drag-section">
-      <button class="uploadBtn" id="uploadBtn">Subir Video/Imagen</button>
+      <button class="uploadBtn" id="uploadBtn">Subir Video/Imagen/Audio</button>
       <input
         type="file"
         id="fileInput"
-        accept="video/*,image/*"
+        accept="video/*,image/*,audio/*"
         multiple
         hidden
       />

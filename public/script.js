@@ -4,20 +4,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const dragDropArea = document.getElementById("dragDropArea");
   const videoPlayer = document.getElementById("videoPlayer");
   const imageDisplay = document.getElementById("imageDisplay");
-  const activateSecondScreenBtn = document.getElementById(
-    "activateSecondScreenBtn"
-  );
+  const audioPlayer = document.getElementById("audioPlayer");
+  const activateSecondScreenBtn = document.getElementById("activateSecondScreenBtn");
   const playlist = document.getElementById("playlist");
 
   let secondScreenWindow = null;
-  let currentVideoURL = "";
-  let currentVideoItem = null;
+  let currentMediaURL = "";
+  let currentMediaItem = null;
   let playlistItems = []; // Lista de elementos de la lista de reproducción
   let currentIndex = -1; // Índice del elemento actualmente en reproducción
 
   // Inicializar reconocimiento de voz en español
-  const recognition = new (window.SpeechRecognition ||
-    window.webkitSpeechRecognition)();
+  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
   recognition.lang = "es-ES";
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
@@ -25,12 +23,19 @@ document.addEventListener("DOMContentLoaded", () => {
   recognition.onresult = (event) => {
     const command = event.results[0][0].transcript.toLowerCase();
     console.log("Comando recibido:", command);
-    if (command.includes("reproducir") || command.includes("play")) {
+  
+    if (command.includes("reproducir video") || command.includes("play video")) {
       playVideo();
-    } else if (command.includes("pausa") || command.includes("pause")) {
+    } else if (command.includes("reproducir audio") || command.includes("play audio")) {
+      playAudio();
+    } else if (command.includes("pausar video") || command.includes("pause video")) {
       pauseVideo();
-    } else if (command.includes("detener") || command.includes("stop")) {
+    } else if (command.includes("pausar audio") || command.includes("pause audio")) {
+      pauseAudio();
+    } else if (command.includes("detener video") || command.includes("stop video")) {
       stopVideo();
+    } else if (command.includes("detener audio") || command.includes("stop audio")) {
+      stopAudio();
     } else if (
       command.includes("segunda pantalla") ||
       command.includes("abrir pantalla")
@@ -46,36 +51,73 @@ document.addEventListener("DOMContentLoaded", () => {
       playPreviousItem();
     }
   };
-
+  
   recognition.onend = () => {
     recognition.start();
   };
 
   recognition.start();
 
-  // Funciones de control de video
-  function playVideo() {
+  // Funciones de control de medios
+ // Funciones de control de medios
+function playVideo() {
+  if (videoPlayer.src) {
     videoPlayer.play();
-    syncWithSecondScreen("play");
+    syncWithSecondScreen("play", "video");
   }
+}
 
-  function pauseVideo() {
+function playAudio() {
+  if (audioPlayer.src) {
+    audioPlayer.play();
+    syncWithSecondScreen("play", "audio");
+  }
+}
+
+function pauseVideo() {
+  if (videoPlayer.src) {
     videoPlayer.pause();
-    syncWithSecondScreen("pause");
+    syncWithSecondScreen("pause", "video");
   }
+}
 
-  function stopVideo() {
+function pauseAudio() {
+  if (audioPlayer.src) {
+    audioPlayer.pause();
+    syncWithSecondScreen("pause", "audio");
+  }
+}
+
+function stopVideo() {
+  if (videoPlayer.src) {
     videoPlayer.pause();
     videoPlayer.currentTime = 0;
+    syncWithSecondScreen("stop", "video");
+  }
+}
+
+function stopAudio() {
+  if (audioPlayer.src) {
+    audioPlayer.pause();
+    audioPlayer.currentTime = 0;
     syncWithSecondScreen("stop");
   }
+}
+
 
   // Función para abrir o maximizar la segunda pantalla
   function toggleSecondScreen() {
     if (!secondScreenWindow || secondScreenWindow.closed) {
       openSecondScreen();
+      activateSecondScreenBtn.classList.add("btn-active");
+      activateSecondScreenBtn.classList.remove("btn-inactive");
+      activateSecondScreenBtn.textContent = "En línea";
     } else {
-      maximizeSecondScreen();
+      secondScreenWindow.close();
+      secondScreenWindow = null;
+      activateSecondScreenBtn.classList.remove("btn-active");
+      activateSecondScreenBtn.classList.add("btn-inactive");
+      activateSecondScreenBtn.textContent = "Activar pantalla 2";
     }
   }
 
@@ -136,8 +178,8 @@ document.addEventListener("DOMContentLoaded", () => {
       </html>
     `);
     syncWithSecondScreen(
-      currentVideoURL ? "video" : "image",
-      currentVideoURL,
+      currentMediaURL ? "video" : "image",
+      currentMediaURL,
       ""
     );
   }
@@ -151,9 +193,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function minimizeSecondScreen() {
     if (secondScreenWindow && !secondScreenWindow.closed) {
-      // Establece un tamaño pequeño y mueve la ventana a una esquina de la pantalla
-      secondScreenWindow.moveTo(screen.width - 200, screen.height - 200); // Ajusta las coordenadas según tu necesidad
-      secondScreenWindow.resizeTo(400, 400); // Ajusta el tamaño según tu necesidad
+      secondScreenWindow.moveTo(screen.width - 200, screen.height - 200);
+      secondScreenWindow.resizeTo(400, 400);
     }
   }
 
@@ -170,7 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const visorElement = document.getElementById("scrollingMessage");
     if (visorElement) {
-      visorElement.textContent = `${fileName}`;
+      visorElement.textContent = fileName;
     }
   }
 
@@ -230,12 +271,14 @@ document.addEventListener("DOMContentLoaded", () => {
           if (result.isConfirmed) {
             listItem.remove();
             URL.revokeObjectURL(fileURL);
-            if (fileURL === currentVideoURL) {
-              currentVideoItem = null;
-              currentVideoURL = "";
+            if (fileURL === currentMediaURL) {
+              currentMediaItem = null;
+              currentMediaURL = "";
               videoPlayer.src = "";
               videoPlayer.hidden = true;
               imageDisplay.hidden = true;
+              audioPlayer.src = "";
+              audioPlayer.hidden = true;
               syncWithSecondScreen("stop");
             }
             playlistItems = playlistItems.filter(
@@ -250,70 +293,57 @@ document.addEventListener("DOMContentLoaded", () => {
           updateDisplay(fileURL, "video", file.name, listItem);
         } else if (file.type.startsWith("image/")) {
           updateDisplay(fileURL, "image", file.name, listItem);
+        } else if (file.type.startsWith("audio/")) {
+          updateDisplay(fileURL, "audio", file.name, listItem);
         }
       });
 
       playlist.appendChild(listItem);
-      playlistItems.push({
-        url: fileURL,
-        type: file.type,
-        name: file.name,
-        element: listItem,
-      });
+      playlistItems.push({ url: fileURL, type: file.type, name: file.name });
+
+      // Si es el primer archivo agregado, lo mostramos automáticamente
+      if (currentMediaURL === "") {
+        updateDisplay(fileURL, file.type.startsWith("video/") ? "video" : file.type.startsWith("audio/") ? "audio" : "image", file.name, listItem);
+      }
     }
   }
 
-  function updateDisplay(fileURL, type, fileName, listItem) {
-    if (currentVideoItem) {
-      currentVideoItem.classList.remove("playing");
-    }
-
-    if (type === "video") {
-      currentVideoURL = fileURL;
-      currentVideoItem = listItem;
-      listItem.classList.add("playing");
+  function updateDisplay(fileURL, mediaType, fileName, listItem) {
+    if (mediaType === "video") {
       videoPlayer.src = fileURL;
       videoPlayer.hidden = false;
       videoPlayer.play();
       imageDisplay.hidden = true;
-      syncWithSecondScreen("video", fileURL, fileName);
-    } else if (type === "image") {
-      currentVideoURL = fileURL;
-      currentVideoItem = listItem;
-      listItem.classList.add("playing");
-      videoPlayer.hidden = true;
+      audioPlayer.hidden = true;
+    } else if (mediaType === "image") {
       imageDisplay.src = fileURL;
       imageDisplay.hidden = false;
-      syncWithSecondScreen("image", fileURL, fileName);
+      videoPlayer.hidden = true;
+      audioPlayer.hidden = true;
+    } else if (mediaType === "audio") {
+      audioPlayer.src = fileURL;
+      audioPlayer.hidden = false;
+      videoPlayer.hidden = true;
+      imageDisplay.hidden = true;
     }
-
-    currentIndex = playlistItems.findIndex((item) => item.url === fileURL);
+    currentMediaURL = fileURL;
+    currentMediaItem = listItem;
+    syncWithSecondScreen(mediaType, fileURL, fileName);
   }
 
   function playNextItem() {
-    if (playlistItems.length > 0 && currentIndex >= 0) {
-      currentIndex = (currentIndex + 1) % playlistItems.length;
-      const nextItem = playlistItems[currentIndex];
-      updateDisplay(
-        nextItem.url,
-        nextItem.type.startsWith("video/") ? "video" : "image",
-        nextItem.name,
-        nextItem.element
-      );
-    }
+    if (playlistItems.length === 0) return;
+
+    currentIndex = (currentIndex + 1) % playlistItems.length;
+    const nextItem = playlistItems[currentIndex];
+    updateDisplay(nextItem.url, nextItem.type.startsWith("video/") ? "video" : nextItem.type.startsWith("audio/") ? "audio" : "image", nextItem.name, null);
   }
 
   function playPreviousItem() {
-    if (playlistItems.length > 0 && currentIndex >= 0) {
-      currentIndex =
-        (currentIndex - 1 + playlistItems.length) % playlistItems.length;
-      const prevItem = playlistItems[currentIndex];
-      updateDisplay(
-        prevItem.url,
-        prevItem.type.startsWith("video/") ? "video" : "image",
-        prevItem.name,
-        prevItem.element
-      );
-    }
+    if (playlistItems.length === 0) return;
+
+    currentIndex = (currentIndex - 1 + playlistItems.length) % playlistItems.length;
+    const prevItem = playlistItems[currentIndex];
+    updateDisplay(prevItem.url, prevItem.type.startsWith("video/") ? "video" : prevItem.type.startsWith("audio/") ? "audio" : "image", prevItem.name, null);
   }
 });
