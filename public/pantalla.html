@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#000000" />
+  <title>Segunda Pantalla — Empatía Digital</title>
+  <link rel="icon" href="./Img/Empathia.png" type="image/png" />
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+    #stage {
+      position: relative;
+      width: 100vw;
+      height: 100svh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #stage video,
+    #stage img {
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+    }
+    #waiting {
+      color: #9097b3;
+      font-family: "Segoe UI", Arial, sans-serif;
+      font-size: 16px;
+      text-align: center;
+      padding: 0 24px;
+    }
+    #waiting strong {
+      color: #5b6eea;
+      display: block;
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+    #connStatus {
+      position: fixed;
+      top: 10px;
+      right: 12px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #f4475f;
+    }
+    #connStatus.connected {
+      background: #4ade80;
+    }
+  </style>
+</head>
+<body>
+  <div id="stage">
+    <div id="waiting">
+      <strong>Pantalla conectada</strong>
+      Esperando a que el control empiece a reproducir algo…
+    </div>
+    <video id="screenVideo" controls playsinline hidden></video>
+    <img id="screenImage" hidden alt="" />
+    <audio id="screenAudio" controls hidden></audio>
+  </div>
+  <div id="connStatus" title="Estado de conexión"></div>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const socket = io();
+    const stageVideo = document.getElementById("screenVideo");
+    const stageImage = document.getElementById("screenImage");
+    const stageAudio = document.getElementById("screenAudio");
+    const waiting = document.getElementById("waiting");
+    const connStatus = document.getElementById("connStatus");
+
+    function hideAllMedia() {
+      stageVideo.hidden = true;
+      stageImage.hidden = true;
+      stageAudio.hidden = true;
+    }
+
+    socket.on("connect", () => {
+      connStatus.classList.add("connected");
+      socket.emit("screen-hello");
+    });
+
+    socket.on("disconnect", () => {
+      connStatus.classList.remove("connected");
+    });
+
+    socket.on("now-playing", (data) => {
+      if (!data) return;
+      const { type, url, action } = data;
+
+      if (type === "video") {
+        waiting.hidden = true;
+        hideAllMedia();
+        if (stageVideo.getAttribute("src") !== url) {
+          stageVideo.src = url;
+        }
+        stageVideo.hidden = false;
+        if (action === "play") stageVideo.play().catch(() => {});
+      } else if (type === "audio") {
+        waiting.hidden = true;
+        hideAllMedia();
+        if (stageAudio.getAttribute("src") !== url) {
+          stageAudio.src = url;
+        }
+        stageAudio.hidden = false;
+        if (action === "play") stageAudio.play().catch(() => {});
+      } else if (type === "image") {
+        waiting.hidden = true;
+        hideAllMedia();
+        stageImage.src = url;
+        stageImage.hidden = false;
+      }
+
+      if (action === "play") {
+        if (type === "video") stageVideo.play().catch(() => {});
+        if (type === "audio") stageAudio.play().catch(() => {});
+      } else if (action === "pause") {
+        stageVideo.pause();
+        stageAudio.pause();
+      } else if (action === "stop") {
+        stageVideo.pause();
+        stageVideo.currentTime = 0;
+        stageAudio.pause();
+        stageAudio.currentTime = 0;
+        hideAllMedia();
+        waiting.hidden = false;
+      }
+    });
+
+    socket.on("file-deleted", ({ name }) => {
+      // Si el archivo borrado es el que se está mostrando, lo limpiamos.
+      const playing = [stageVideo, stageAudio, stageImage].find(
+        (el) => el.getAttribute("src") && el.getAttribute("src").includes(name)
+      );
+      if (playing) {
+        hideAllMedia();
+        waiting.hidden = false;
+      }
+    });
+  </script>
+</body>
+</html>
