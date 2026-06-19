@@ -51,6 +51,22 @@
         <button id="voiceCmdBtn" aria-pressed="false">
           🎤 Activar comandos de voz
         </button>
+
+        <div id="secondScreenInfo" class="second-screen-info">
+          <p id="screenStatus" class="screen-status">
+            <span class="status-dot" id="screenStatusDot"></span>
+            Ninguna pantalla conectada
+          </p>
+          <p class="second-screen-hint">
+            Para usar otro dispositivo como pantalla (TV, tablet, otro celu),
+            abrí esta dirección en su navegador:
+          </p>
+          <div class="second-screen-url-row">
+            <input id="secondScreenUrl" type="text" readonly />
+            <button id="copySecondScreenUrl" type="button">Copiar</button>
+          </div>
+        </div>
+
         <h3>Playlist</h3>
       </div>
       <ul id="playlist" class="draggable-list"></ul>
@@ -77,6 +93,7 @@
     </div>
   </div>
 
+  <script src="/socket.io/socket.io.js"></script>
   <script src="./script.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <script>
