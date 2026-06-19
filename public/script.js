@@ -8,20 +8,88 @@ document.addEventListener("DOMContentLoaded", () => {
   const activateSecondScreenBtn = document.getElementById("activateSecondScreenBtn");
   const voiceCmdBtn = document.getElementById("voiceCmdBtn");
   const playlist = document.getElementById("playlist");
+  const screenStatus = document.getElementById("screenStatus");
+  const screenStatusDot = document.getElementById("screenStatusDot");
+  const secondScreenUrl = document.getElementById("secondScreenUrl");
+  const copySecondScreenUrlBtn = document.getElementById("copySecondScreenUrl");
 
-  let secondScreenWindow = null;
   let currentMediaURL = "";
   let currentMediaItem = null;
-  let playlistItems = []; // Lista de elementos de la lista de reproducción
-  let currentIndex = -1; // Índice del elemento actualmente en reproducción
+  let playlistItems = []; // [{ url, type, name }]
+  let currentIndex = -1;
+  let connectedScreens = 0;
+
+  /* =====================================================================
+     SOCKET.IO — sincroniza con cualquier pantalla conectada, esté en
+     esta misma compu (otra pestaña) o en otro dispositivo de la red.
+     ===================================================================== */
+  const socket = io();
+
+  socket.on("screen-count", (count) => {
+    connectedScreens = count;
+    updateScreenStatusUI();
+  });
+
+  socket.on("file-deleted", ({ name }) => {
+    const item = playlistItems.find((i) => i.name === name);
+    if (item) removePlaylistItem(item, { skipServerDelete: true });
+  });
+
+  function updateScreenStatusUI() {
+    const connected = connectedScreens > 0;
+    screenStatusDot.classList.toggle("online", connected);
+    screenStatus.lastChild.textContent = connected
+      ? ` ${connectedScreens} pantalla${connectedScreens > 1 ? "s" : ""} conectada${
+          connectedScreens > 1 ? "s" : ""
+        }`
+      : " Ninguna pantalla conectada";
+    activateSecondScreenBtn.classList.toggle("btn-active", connected);
+    activateSecondScreenBtn.classList.toggle("btn-inactive", !connected);
+    activateSecondScreenBtn.setAttribute("aria-pressed", String(connected));
+  }
+
+  function syncWithSecondScreen(type, fileURL = "", fileName = "", action = "play") {
+    socket.emit("now-playing", { type, url: fileURL, name: fileName, action });
+    const visorElement = document.getElementById("scrollingMessage");
+    if (visorElement && fileName) {
+      const span = visorElement.querySelector("span");
+      if (span) span.textContent = fileName;
+    }
+  }
+
+  /* =====================================================================
+     PANEL "ABRIR EN OTRO DISPOSITIVO"
+     ===================================================================== */
+  const screenPageURL = `${window.location.origin}/pantalla.html`;
+  secondScreenUrl.value = screenPageURL;
+  updateScreenStatusUI();
+
+  copySecondScreenUrlBtn.addEventListener("click", async () => {
+    try {
+      await navigator.clipboard.writeText(screenPageURL);
+      copySecondScreenUrlBtn.textContent = "¡Copiado!";
+    } catch (err) {
+      secondScreenUrl.select();
+      document.execCommand("copy");
+      copySecondScreenUrlBtn.textContent = "¡Copiado!";
+    }
+    setTimeout(() => {
+      copySecondScreenUrlBtn.textContent = "Copiar";
+    }, 1500);
+  });
+
+  // En la misma compu, este botón simplemente abre la pantalla en otra pestaña.
+  activateSecondScreenBtn.addEventListener("click", () => {
+    window.open(screenPageURL, "SecondScreen");
+  });
 
   /* =====================================================================
      RECONOCIMIENTO DE VOZ
      - Safari iOS no implementa SpeechRecognition: antes esto crasheaba
        toda la app apenas cargaba la página en un iPhone.
      - En mobile, pedir el micrófono sin que el usuario toque algo suele
-       ser bloqueado por el navegador, así que ahora el reconocimiento
-       arranca solo cuando se toca el botón "Comandos de voz".
+       ser bloqueado por el navegador, así que ahora arranca solo cuando
+       se toca el botón "Comandos de voz".
      ===================================================================== */
   const SpeechRecognitionAPI =
     window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -59,15 +127,6 @@ document.addEventListener("DOMContentLoaded", () => {
         stopVideo();
       } else if (command.includes("detener audio") || command.includes("stop audio")) {
         stopAudio();
-      } else if (
-        command.includes("segunda pantalla") ||
-        command.includes("abrir pantalla")
-      ) {
-        toggleSecondScreen();
-      } else if (command.includes("maximizar")) {
-        maximizeSecondScreen();
-      } else if (command.includes("minimizar")) {
-        minimizeSecondScreen();
       } else if (command.includes("siguiente")) {
         playNextItem();
       } else if (command.includes("volver") || command.includes("anterior")) {
@@ -77,7 +136,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     r.onerror = (event) => {
       console.warn("Error de reconocimiento de voz:", event.error);
-      // Si el usuario negó el permiso del micrófono, no insistimos en loop.
       if (event.error === "not-allowed" || event.error === "service-not-allowed") {
         voiceStoppedByUser = true;
         setVoiceUI(false);
@@ -92,7 +150,6 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     r.onend = () => {
-      // Reinicia solo si el usuario no lo apagó manualmente ni hubo error de permisos.
       if (voiceActive && !voiceStoppedByUser) {
         try {
           r.start();
@@ -111,8 +168,6 @@ document.addEventListener("DOMContentLoaded", () => {
     voiceCmdBtn.textContent = active
       ? "🎤 Comandos de voz: activados"
       : "🎤 Activar comandos de voz";
-    voiceCmdBtn.classList.toggle("btn-active", active);
-    voiceCmdBtn.classList.toggle("btn-inactive", !active);
   }
 
   if (voiceSupported && voiceCmdBtn) {
@@ -135,32 +190,34 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Funciones de control de medios
+  /* =====================================================================
+     CONTROL DE MEDIOS
+     ===================================================================== */
   function playVideo() {
     if (videoPlayer.src) {
       videoPlayer.play();
-      syncWithSecondScreen("play", "video");
+      syncWithSecondScreen("video", videoPlayer.src, currentMediaName(), "play");
     }
   }
 
   function playAudio() {
     if (audioPlayer.src) {
       audioPlayer.play();
-      syncWithSecondScreen("play", "audio");
+      syncWithSecondScreen("audio", audioPlayer.src, currentMediaName(), "play");
     }
   }
 
   function pauseVideo() {
     if (videoPlayer.src) {
       videoPlayer.pause();
-      syncWithSecondScreen("pause", "video");
+      syncWithSecondScreen("video", videoPlayer.src, currentMediaName(), "pause");
     }
   }
 
   function pauseAudio() {
     if (audioPlayer.src) {
       audioPlayer.pause();
-      syncWithSecondScreen("pause", "audio");
+      syncWithSecondScreen("audio", audioPlayer.src, currentMediaName(), "pause");
     }
   }
 
@@ -168,7 +225,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (videoPlayer.src) {
       videoPlayer.pause();
       videoPlayer.currentTime = 0;
-      syncWithSecondScreen("stop", "video");
+      syncWithSecondScreen("video", videoPlayer.src, "", "stop");
     }
   }
 
@@ -176,178 +233,32 @@ document.addEventListener("DOMContentLoaded", () => {
     if (audioPlayer.src) {
       audioPlayer.pause();
       audioPlayer.currentTime = 0;
-      syncWithSecondScreen("stop");
+      syncWithSecondScreen("audio", audioPlayer.src, "", "stop");
     }
+  }
+
+  function currentMediaName() {
+    return currentMediaItem ? currentMediaItem.dataset.name : "";
   }
 
   /* =====================================================================
-     SEGUNDA PANTALLA
-     - Sigue siendo window.open(): pensado para cuando el dispositivo está
-       conectado a un segundo monitor/TV (lo normal en un club o salón).
-     - En un celular no hay un "segundo monitor" real, así que avisamos
-       si el navegador bloqueó el popup en vez de fallar en silencio.
+     SUBIDA DE ARCHIVOS — ahora va al servidor (POST /upload) en vez de
+     quedar como blob: en memoria. Así cualquier pantalla, en cualquier
+     dispositivo, puede pedir la misma URL y la playlist sobrevive a un
+     refresh de página.
      ===================================================================== */
-  function toggleSecondScreen() {
-    if (!secondScreenWindow || secondScreenWindow.closed) {
-      openSecondScreen();
-    } else {
-      secondScreenWindow.close();
-      secondScreenWindow = null;
-      activateSecondScreenBtn.classList.remove("btn-active");
-      activateSecondScreenBtn.classList.add("btn-inactive");
-      activateSecondScreenBtn.textContent = "Activar segunda pantalla";
-      activateSecondScreenBtn.setAttribute("aria-pressed", "false");
-    }
-  }
-
-  activateSecondScreenBtn.addEventListener("click", () => {
-    toggleSecondScreen();
-  });
-
-  function openSecondScreen() {
-    secondScreenWindow = window.open(
-      "",
-      "SecondScreen",
-      "width=800,height=600"
-    );
-
-    if (!secondScreenWindow) {
-      // Popup bloqueado: muy común en navegadores mobile.
-      if (window.Swal) {
-        Swal.fire({
-          icon: "info",
-          title: "No se pudo abrir la segunda pantalla",
-          text:
-            "El navegador bloqueó la ventana emergente. Permití pop-ups para este sitio, o conectá el dispositivo a una pantalla externa.",
-        });
-      }
-      return;
-    }
-
-    secondScreenWindow.document.write(`
-      <html>
-      <head>
-        <link rel="icon" href="./Img/Empathia.png" type="image/png" />
-        <title>Segunda Pantalla</title>
-        <style>
-          body { margin: 0; padding: 0; overflow: hidden; background: #000; }
-          #secondScreenVideo, #secondScreenImage {
-            width: 100%;
-            height: 100vh;
-            object-fit: contain;
-          }
-        </style>
-      </head>
-      <body>
-        <video id="secondScreenVideo" controls playsinline style="display: none;"></video>
-        <img id="secondScreenImage" style="display: none;" />
-        <script>
-          const video = document.getElementById('secondScreenVideo');
-          const image = document.getElementById('secondScreenImage');
-
-          window.addEventListener('message', (event) => {
-            const data = event.data;
-            if (data.type === 'video') {
-              video.src = data.src;
-              video.style.display = 'block';
-              image.style.display = 'none';
-              if (data.action === 'play') video.play();
-            } else if (data.type === 'image') {
-              image.src = data.src;
-              image.style.display = 'block';
-              video.style.display = 'none';
-            }
-            if (data.action === 'play') {
-              video.play();
-            } else if (data.action === 'pause') {
-              video.pause();
-            } else if (data.action === 'stop') {
-              video.pause();
-              video.currentTime = 0;
-            }
-          });
-        </script>
-      </body>
-      </html>
-    `);
-
-    activateSecondScreenBtn.classList.add("btn-active");
-    activateSecondScreenBtn.classList.remove("btn-inactive");
-    activateSecondScreenBtn.textContent = "En línea";
-    activateSecondScreenBtn.setAttribute("aria-pressed", "true");
-
-    syncWithSecondScreen(
-      currentMediaURL ? "video" : "image",
-      currentMediaURL,
-      ""
-    );
-  }
-
-  function maximizeSecondScreen() {
-    if (secondScreenWindow && !secondScreenWindow.closed) {
-      try {
-        secondScreenWindow.moveTo(0, 0);
-        secondScreenWindow.resizeTo(screen.width, screen.height);
-      } catch (err) {
-        // moveTo/resizeTo no funcionan en todos los navegadores mobile; se ignora.
-      }
-    }
-  }
-
-  function minimizeSecondScreen() {
-    if (secondScreenWindow && !secondScreenWindow.closed) {
-      try {
-        secondScreenWindow.moveTo(screen.width - 200, screen.height - 200);
-        secondScreenWindow.resizeTo(400, 400);
-      } catch (err) {
-        // idem arriba
-      }
-    }
-  }
-
-  function syncWithSecondScreen(action, fileURL = "", fileName = "") {
-    if (secondScreenWindow && !secondScreenWindow.closed) {
-      if (action === "video" || action === "image") {
-        secondScreenWindow.postMessage(
-          { type: action, src: fileURL, name: fileName, action: "play" },
-          "*"
-        );
-      } else {
-        secondScreenWindow.postMessage({ action }, "*");
-      }
-    }
-    const visorElement = document.getElementById("scrollingMessage");
-    if (visorElement && fileName) {
-      const span = visorElement.querySelector("span");
-      if (span) span.textContent = fileName;
-    }
-  }
-
-  /* =====================================================================
-     SUBIDA DE ARCHIVOS
-     - El drag&drop HTML5 (dragover/drop) no dispara con touch en mobile.
-     - Antes el área "dragDropArea" no tenía forma de abrirse al tocarla;
-       ahora también abre el selector de archivos con un tap o con
-       Enter/Espacio desde el teclado.
-     ===================================================================== */
-  uploadBtn.addEventListener("click", () => {
-    fileInput.click();
-  });
-
-  fileInput.addEventListener("change", (e) => {
-    handleFiles(e.target.files);
-    fileInput.value = ""; // permite volver a elegir el mismo archivo después
-  });
-
-  dragDropArea.addEventListener("click", () => {
-    fileInput.click();
-  });
-
+  uploadBtn.addEventListener("click", () => fileInput.click());
+  dragDropArea.addEventListener("click", () => fileInput.click());
   dragDropArea.addEventListener("keydown", (e) => {
     if (e.key === "Enter" || e.key === " ") {
       e.preventDefault();
       fileInput.click();
     }
+  });
+
+  fileInput.addEventListener("change", (e) => {
+    handleFiles(e.target.files);
+    fileInput.value = "";
   });
 
   dragDropArea.addEventListener("dragover", (e) => {
@@ -369,85 +280,144 @@ document.addEventListener("DOMContentLoaded", () => {
     handleFiles(e.dataTransfer.files);
   });
 
-  function handleFiles(files) {
+  async function handleFiles(files) {
     for (const file of files) {
-      const fileURL = URL.createObjectURL(file);
-      const listItem = document.createElement("li");
-      const fileName = document.createElement("span");
-      const removeBtn = document.createElement("button");
+      const placeholderItem = addPlaylistItem({
+        name: null,
+        originalName: file.name,
+        type: file.type.startsWith("video/")
+          ? "video"
+          : file.type.startsWith("audio/")
+          ? "audio"
+          : "image",
+        url: null,
+        uploading: true,
+      });
 
-      listItem.className = "playlist-item";
-      fileName.textContent = file.name;
-      removeBtn.textContent = "Eliminar";
-      removeBtn.className = "remove-btn";
-      removeBtn.setAttribute("aria-label", `Eliminar ${file.name}`);
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const res = await fetch("/upload", { method: "POST", body: formData });
+        const data = await res.json();
 
-      listItem.appendChild(fileName);
-      listItem.appendChild(removeBtn);
+        if (!res.ok) throw new Error(data.message || "Error al subir el archivo");
 
-      removeBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const confirmAndRemove = () => {
-          listItem.remove();
-          URL.revokeObjectURL(fileURL);
-          if (fileURL === currentMediaURL) {
-            currentMediaItem = null;
-            currentMediaURL = "";
-            videoPlayer.src = "";
-            videoPlayer.hidden = true;
-            imageDisplay.hidden = true;
-            audioPlayer.src = "";
-            audioPlayer.hidden = true;
-            syncWithSecondScreen("stop");
-          }
-          playlistItems = playlistItems.filter(
-            (item) => item.url !== fileURL
-          );
-        };
-
+        finalizePlaylistItem(placeholderItem, data.file);
+      } catch (err) {
+        console.error(err);
+        placeholderItem.remove();
         if (window.Swal) {
           Swal.fire({
-            title: "¿Estás seguro?",
-            text: `¿Quieres eliminar ${file.name}?`,
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "¡Sí, elimínalo!",
-            cancelButtonText: "No, cancelar",
-          }).then((result) => {
-            if (result.isConfirmed) confirmAndRemove();
+            icon: "error",
+            title: "No se pudo subir el archivo",
+            text: `${file.name}: ${err.message}`,
           });
-        } else if (confirm(`¿Quieres eliminar ${file.name}?`)) {
-          confirmAndRemove();
         }
-      });
-
-      listItem.addEventListener("click", () => {
-        if (file.type.startsWith("video/")) {
-          updateDisplay(fileURL, "video", file.name, listItem);
-        } else if (file.type.startsWith("image/")) {
-          updateDisplay(fileURL, "image", file.name, listItem);
-        } else if (file.type.startsWith("audio/")) {
-          updateDisplay(fileURL, "audio", file.name, listItem);
-        }
-      });
-
-      playlist.appendChild(listItem);
-      playlistItems.push({ url: fileURL, type: file.type, name: file.name });
-
-      // Si es el primer archivo agregado, lo mostramos automáticamente
-      if (currentMediaURL === "") {
-        updateDisplay(
-          fileURL,
-          file.type.startsWith("video/")
-            ? "video"
-            : file.type.startsWith("audio/")
-            ? "audio"
-            : "image",
-          file.name,
-          listItem
-        );
       }
     }
+  }
+
+  /* =====================================================================
+     PLAYLIST — cada <li> guarda sus datos en dataset, y el array
+     playlistItems se mantiene sincronizado con lo que devuelve el server.
+     ===================================================================== */
+  function addPlaylistItem({ name, originalName, type, url, uploading }) {
+    const listItem = document.createElement("li");
+    const fileNameSpan = document.createElement("span");
+    const removeBtn = document.createElement("button");
+
+    listItem.className = "playlist-item";
+    listItem.dataset.name = name || "";
+    listItem.dataset.type = type;
+    listItem.dataset.url = url || "";
+
+    fileNameSpan.textContent = uploading ? `Subiendo: ${originalName}…` : originalName;
+    removeBtn.textContent = "Eliminar";
+    removeBtn.className = "remove-btn";
+    removeBtn.setAttribute("aria-label", `Eliminar ${originalName}`);
+    removeBtn.disabled = !!uploading;
+
+    listItem.appendChild(fileNameSpan);
+    listItem.appendChild(removeBtn);
+    playlist.appendChild(listItem);
+
+    removeBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const item = playlistItems.find((i) => i.name === listItem.dataset.name);
+      const confirmAndRemove = () => removePlaylistItem(item || { name: listItem.dataset.name, listItem });
+
+      if (window.Swal) {
+        Swal.fire({
+          title: "¿Estás seguro?",
+          text: `¿Quieres eliminar ${originalName}?`,
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonText: "¡Sí, elimínalo!",
+          cancelButtonText: "No, cancelar",
+        }).then((result) => {
+          if (result.isConfirmed) confirmAndRemove();
+        });
+      } else if (confirm(`¿Quieres eliminar ${originalName}?`)) {
+        confirmAndRemove();
+      }
+    });
+
+    listItem.addEventListener("click", () => {
+      if (uploading || !listItem.dataset.url) return;
+      updateDisplay(listItem.dataset.url, listItem.dataset.type, originalName, listItem);
+    });
+
+    return listItem;
+  }
+
+  function finalizePlaylistItem(listItem, fileInfo) {
+    listItem.dataset.name = fileInfo.name;
+    listItem.dataset.url = fileInfo.url;
+    listItem.dataset.type = fileInfo.type;
+    listItem.querySelector("span").textContent = fileInfo.originalName;
+    listItem.querySelector("button").disabled = false;
+
+    const entry = { name: fileInfo.name, url: fileInfo.url, type: fileInfo.type, listItem };
+    playlistItems.push(entry);
+
+    if (currentMediaURL === "") {
+      updateDisplay(fileInfo.url, fileInfo.type, fileInfo.originalName, listItem);
+    }
+  }
+
+  function removePlaylistItem(item, { skipServerDelete = false } = {}) {
+    const listItem = item.listItem || playlist.querySelector(`li[data-name="${item.name}"]`);
+
+    const doRemove = () => {
+      if (listItem) listItem.remove();
+      playlistItems = playlistItems.filter((i) => i.name !== item.name);
+      if (item.url === currentMediaURL) {
+        currentMediaItem = null;
+        currentMediaURL = "";
+        videoPlayer.src = "";
+        videoPlayer.hidden = true;
+        imageDisplay.hidden = true;
+        audioPlayer.src = "";
+        audioPlayer.hidden = true;
+        syncWithSecondScreen("stop", "", "", "stop");
+      }
+    };
+
+    if (skipServerDelete || !item.name) {
+      doRemove();
+      return;
+    }
+
+    fetch("/delete", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileName: item.name }),
+    })
+      .then(() => doRemove())
+      .catch((err) => {
+        console.error("No se pudo eliminar en el servidor:", err);
+        doRemove();
+      });
   }
 
   function updateDisplay(fileURL, mediaType, fileName, listItem) {
@@ -470,41 +440,46 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     currentMediaURL = fileURL;
     currentMediaItem = listItem;
-    syncWithSecondScreen(mediaType, fileURL, fileName);
+    syncWithSecondScreen(mediaType, fileURL, fileName, "play");
   }
 
   function playNextItem() {
     if (playlistItems.length === 0) return;
-
     currentIndex = (currentIndex + 1) % playlistItems.length;
-    const nextItem = playlistItems[currentIndex];
-    updateDisplay(
-      nextItem.url,
-      nextItem.type.startsWith("video/")
-        ? "video"
-        : nextItem.type.startsWith("audio/")
-        ? "audio"
-        : "image",
-      nextItem.name,
-      null
-    );
+    const item = playlistItems[currentIndex];
+    updateDisplay(item.url, item.type, item.listItem.querySelector("span").textContent, item.listItem);
   }
 
   function playPreviousItem() {
     if (playlistItems.length === 0) return;
-
-    currentIndex =
-      (currentIndex - 1 + playlistItems.length) % playlistItems.length;
-    const prevItem = playlistItems[currentIndex];
-    updateDisplay(
-      prevItem.url,
-      prevItem.type.startsWith("video/")
-        ? "video"
-        : prevItem.type.startsWith("audio/")
-        ? "audio"
-        : "image",
-      prevItem.name,
-      null
-    );
+    currentIndex = (currentIndex - 1 + playlistItems.length) % playlistItems.length;
+    const item = playlistItems[currentIndex];
+    updateDisplay(item.url, item.type, item.listItem.querySelector("span").textContent, item.listItem);
   }
+
+  /* =====================================================================
+     CARGAR PLAYLIST EXISTENTE AL ABRIR LA PÁGINA
+     ===================================================================== */
+  async function loadExistingFiles() {
+    try {
+      const res = await fetch("/files");
+      const files = await res.json();
+      files.forEach((f) => {
+        const listItem = addPlaylistItem({
+          name: f.name,
+          originalName: f.name,
+          type: f.type,
+          url: f.url,
+          uploading: false,
+        });
+        listItem.dataset.url = f.url;
+        listItem.dataset.type = f.type;
+        playlistItems.push({ name: f.name, url: f.url, type: f.type, listItem });
+      });
+    } catch (err) {
+      console.error("No se pudo cargar la playlist existente:", err);
+    }
+  }
+
+  loadExistingFiles();
 });
