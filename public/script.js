@@ -6,6 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const imageDisplay = document.getElementById("imageDisplay");
   const audioPlayer = document.getElementById("audioPlayer");
   const activateSecondScreenBtn = document.getElementById("activateSecondScreenBtn");
+  const voiceCmdBtn = document.getElementById("voiceCmdBtn");
   const playlist = document.getElementById("playlist");
 
   let secondScreenWindow = null;
@@ -14,110 +15,188 @@ document.addEventListener("DOMContentLoaded", () => {
   let playlistItems = []; // Lista de elementos de la lista de reproducción
   let currentIndex = -1; // Índice del elemento actualmente en reproducción
 
-  // Inicializar reconocimiento de voz en español
-  const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-  recognition.lang = "es-ES";
-  recognition.interimResults = false;
-  recognition.maxAlternatives = 1;
+  /* =====================================================================
+     RECONOCIMIENTO DE VOZ
+     - Safari iOS no implementa SpeechRecognition: antes esto crasheaba
+       toda la app apenas cargaba la página en un iPhone.
+     - En mobile, pedir el micrófono sin que el usuario toque algo suele
+       ser bloqueado por el navegador, así que ahora el reconocimiento
+       arranca solo cuando se toca el botón "Comandos de voz".
+     ===================================================================== */
+  const SpeechRecognitionAPI =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+  const voiceSupported = !!SpeechRecognitionAPI;
+  let recognition = null;
+  let voiceActive = false;
+  let voiceStoppedByUser = false;
 
-  recognition.onresult = (event) => {
-    const command = event.results[0][0].transcript.toLowerCase();
-    console.log("Comando recibido:", command);
-  
-    if (command.includes("reproducir video") || command.includes("play video")) {
-      playVideo();
-    } else if (command.includes("reproducir audio") || command.includes("play audio")) {
-      playAudio();
-    } else if (command.includes("pausar video") || command.includes("pause video")) {
-      pauseVideo();
-    } else if (command.includes("pausar audio") || command.includes("pause audio")) {
-      pauseAudio();
-    } else if (command.includes("detener video") || command.includes("stop video")) {
-      stopVideo();
-    } else if (command.includes("detener audio") || command.includes("stop audio")) {
-      stopAudio();
-    } else if (
-      command.includes("segunda pantalla") ||
-      command.includes("abrir pantalla")
-    ) {
-      toggleSecondScreen();
-    } else if (command.includes("maximizar")) {
-      maximizeSecondScreen();
-    } else if (command.includes("minimizar")) {
-      minimizeSecondScreen();
-    } else if (command.includes("siguiente")) {
-      playNextItem();
-    } else if (command.includes("volver") || command.includes("anterior")) {
-      playPreviousItem();
-    }
-  };
-  
-  recognition.onend = () => {
-    recognition.start();
-  };
+  if (!voiceSupported && voiceCmdBtn) {
+    voiceCmdBtn.disabled = true;
+    voiceCmdBtn.textContent = "Comandos de voz no disponibles";
+    voiceCmdBtn.title =
+      "Este navegador no soporta reconocimiento de voz (por ejemplo Safari en iPhone/iPad).";
+  }
 
-  recognition.start();
+  function buildRecognition() {
+    const r = new SpeechRecognitionAPI();
+    r.lang = "es-ES";
+    r.interimResults = false;
+    r.maxAlternatives = 1;
+
+    r.onresult = (event) => {
+      const command = event.results[0][0].transcript.toLowerCase();
+      console.log("Comando recibido:", command);
+
+      if (command.includes("reproducir video") || command.includes("play video")) {
+        playVideo();
+      } else if (command.includes("reproducir audio") || command.includes("play audio")) {
+        playAudio();
+      } else if (command.includes("pausar video") || command.includes("pause video")) {
+        pauseVideo();
+      } else if (command.includes("pausar audio") || command.includes("pause audio")) {
+        pauseAudio();
+      } else if (command.includes("detener video") || command.includes("stop video")) {
+        stopVideo();
+      } else if (command.includes("detener audio") || command.includes("stop audio")) {
+        stopAudio();
+      } else if (
+        command.includes("segunda pantalla") ||
+        command.includes("abrir pantalla")
+      ) {
+        toggleSecondScreen();
+      } else if (command.includes("maximizar")) {
+        maximizeSecondScreen();
+      } else if (command.includes("minimizar")) {
+        minimizeSecondScreen();
+      } else if (command.includes("siguiente")) {
+        playNextItem();
+      } else if (command.includes("volver") || command.includes("anterior")) {
+        playPreviousItem();
+      }
+    };
+
+    r.onerror = (event) => {
+      console.warn("Error de reconocimiento de voz:", event.error);
+      // Si el usuario negó el permiso del micrófono, no insistimos en loop.
+      if (event.error === "not-allowed" || event.error === "service-not-allowed") {
+        voiceStoppedByUser = true;
+        setVoiceUI(false);
+        if (window.Swal) {
+          Swal.fire({
+            icon: "warning",
+            title: "Micrófono bloqueado",
+            text: "Activá el permiso de micrófono en el navegador para usar comandos de voz.",
+          });
+        }
+      }
+    };
+
+    r.onend = () => {
+      // Reinicia solo si el usuario no lo apagó manualmente ni hubo error de permisos.
+      if (voiceActive && !voiceStoppedByUser) {
+        try {
+          r.start();
+        } catch (err) {
+          console.warn("No se pudo reiniciar el reconocimiento de voz:", err);
+        }
+      }
+    };
+
+    return r;
+  }
+
+  function setVoiceUI(active) {
+    voiceActive = active;
+    if (!voiceCmdBtn) return;
+    voiceCmdBtn.textContent = active
+      ? "🎤 Comandos de voz: activados"
+      : "🎤 Activar comandos de voz";
+    voiceCmdBtn.classList.toggle("btn-active", active);
+    voiceCmdBtn.classList.toggle("btn-inactive", !active);
+  }
+
+  if (voiceSupported && voiceCmdBtn) {
+    setVoiceUI(false);
+    voiceCmdBtn.addEventListener("click", () => {
+      if (!voiceActive) {
+        voiceStoppedByUser = false;
+        recognition = recognition || buildRecognition();
+        try {
+          recognition.start();
+          setVoiceUI(true);
+        } catch (err) {
+          console.warn("No se pudo iniciar el reconocimiento de voz:", err);
+        }
+      } else {
+        voiceStoppedByUser = true;
+        if (recognition) recognition.stop();
+        setVoiceUI(false);
+      }
+    });
+  }
 
   // Funciones de control de medios
- // Funciones de control de medios
-function playVideo() {
-  if (videoPlayer.src) {
-    videoPlayer.play();
-    syncWithSecondScreen("play", "video");
+  function playVideo() {
+    if (videoPlayer.src) {
+      videoPlayer.play();
+      syncWithSecondScreen("play", "video");
+    }
   }
-}
 
-function playAudio() {
-  if (audioPlayer.src) {
-    audioPlayer.play();
-    syncWithSecondScreen("play", "audio");
+  function playAudio() {
+    if (audioPlayer.src) {
+      audioPlayer.play();
+      syncWithSecondScreen("play", "audio");
+    }
   }
-}
 
-function pauseVideo() {
-  if (videoPlayer.src) {
-    videoPlayer.pause();
-    syncWithSecondScreen("pause", "video");
+  function pauseVideo() {
+    if (videoPlayer.src) {
+      videoPlayer.pause();
+      syncWithSecondScreen("pause", "video");
+    }
   }
-}
 
-function pauseAudio() {
-  if (audioPlayer.src) {
-    audioPlayer.pause();
-    syncWithSecondScreen("pause", "audio");
+  function pauseAudio() {
+    if (audioPlayer.src) {
+      audioPlayer.pause();
+      syncWithSecondScreen("pause", "audio");
+    }
   }
-}
 
-function stopVideo() {
-  if (videoPlayer.src) {
-    videoPlayer.pause();
-    videoPlayer.currentTime = 0;
-    syncWithSecondScreen("stop", "video");
+  function stopVideo() {
+    if (videoPlayer.src) {
+      videoPlayer.pause();
+      videoPlayer.currentTime = 0;
+      syncWithSecondScreen("stop", "video");
+    }
   }
-}
 
-function stopAudio() {
-  if (audioPlayer.src) {
-    audioPlayer.pause();
-    audioPlayer.currentTime = 0;
-    syncWithSecondScreen("stop");
+  function stopAudio() {
+    if (audioPlayer.src) {
+      audioPlayer.pause();
+      audioPlayer.currentTime = 0;
+      syncWithSecondScreen("stop");
+    }
   }
-}
 
-
-  // Función para abrir o maximizar la segunda pantalla
+  /* =====================================================================
+     SEGUNDA PANTALLA
+     - Sigue siendo window.open(): pensado para cuando el dispositivo está
+       conectado a un segundo monitor/TV (lo normal en un club o salón).
+     - En un celular no hay un "segundo monitor" real, así que avisamos
+       si el navegador bloqueó el popup en vez de fallar en silencio.
+     ===================================================================== */
   function toggleSecondScreen() {
     if (!secondScreenWindow || secondScreenWindow.closed) {
       openSecondScreen();
-      activateSecondScreenBtn.classList.add("btn-active");
-      activateSecondScreenBtn.classList.remove("btn-inactive");
-      activateSecondScreenBtn.textContent = "En línea";
     } else {
       secondScreenWindow.close();
       secondScreenWindow = null;
       activateSecondScreenBtn.classList.remove("btn-active");
       activateSecondScreenBtn.classList.add("btn-inactive");
-      activateSecondScreenBtn.textContent = "Activar pantalla 2";
+      activateSecondScreenBtn.textContent = "Activar segunda pantalla";
+      activateSecondScreenBtn.setAttribute("aria-pressed", "false");
     }
   }
 
@@ -131,27 +210,41 @@ function stopAudio() {
       "SecondScreen",
       "width=800,height=600"
     );
+
+    if (!secondScreenWindow) {
+      // Popup bloqueado: muy común en navegadores mobile.
+      if (window.Swal) {
+        Swal.fire({
+          icon: "info",
+          title: "No se pudo abrir la segunda pantalla",
+          text:
+            "El navegador bloqueó la ventana emergente. Permití pop-ups para este sitio, o conectá el dispositivo a una pantalla externa.",
+        });
+      }
+      return;
+    }
+
     secondScreenWindow.document.write(`
       <html>
       <head>
         <link rel="icon" href="./Img/Empathia.png" type="image/png" />
         <title>Segunda Pantalla</title>
         <style>
-          body { margin: 0; padding: 0; overflow: hidden; }
-          #secondScreenVideo, #secondScreenImage { 
-            width: 100%; 
-            height: 100vh; 
+          body { margin: 0; padding: 0; overflow: hidden; background: #000; }
+          #secondScreenVideo, #secondScreenImage {
+            width: 100%;
+            height: 100vh;
             object-fit: contain;
           }
         </style>
       </head>
       <body>
-        <video id="secondScreenVideo" controls style="display: none;"></video>
+        <video id="secondScreenVideo" controls playsinline style="display: none;"></video>
         <img id="secondScreenImage" style="display: none;" />
         <script>
           const video = document.getElementById('secondScreenVideo');
           const image = document.getElementById('secondScreenImage');
-          
+
           window.addEventListener('message', (event) => {
             const data = event.data;
             if (data.type === 'video') {
@@ -177,6 +270,12 @@ function stopAudio() {
       </body>
       </html>
     `);
+
+    activateSecondScreenBtn.classList.add("btn-active");
+    activateSecondScreenBtn.classList.remove("btn-inactive");
+    activateSecondScreenBtn.textContent = "En línea";
+    activateSecondScreenBtn.setAttribute("aria-pressed", "true");
+
     syncWithSecondScreen(
       currentMediaURL ? "video" : "image",
       currentMediaURL,
@@ -186,15 +285,23 @@ function stopAudio() {
 
   function maximizeSecondScreen() {
     if (secondScreenWindow && !secondScreenWindow.closed) {
-      secondScreenWindow.moveTo(0, 0);
-      secondScreenWindow.resizeTo(screen.width, screen.height);
+      try {
+        secondScreenWindow.moveTo(0, 0);
+        secondScreenWindow.resizeTo(screen.width, screen.height);
+      } catch (err) {
+        // moveTo/resizeTo no funcionan en todos los navegadores mobile; se ignora.
+      }
     }
   }
 
   function minimizeSecondScreen() {
     if (secondScreenWindow && !secondScreenWindow.closed) {
-      secondScreenWindow.moveTo(screen.width - 200, screen.height - 200);
-      secondScreenWindow.resizeTo(400, 400);
+      try {
+        secondScreenWindow.moveTo(screen.width - 200, screen.height - 200);
+        secondScreenWindow.resizeTo(400, 400);
+      } catch (err) {
+        // idem arriba
+      }
     }
   }
 
@@ -210,18 +317,37 @@ function stopAudio() {
       }
     }
     const visorElement = document.getElementById("scrollingMessage");
-    if (visorElement) {
-      visorElement.textContent = fileName;
+    if (visorElement && fileName) {
+      const span = visorElement.querySelector("span");
+      if (span) span.textContent = fileName;
     }
   }
 
-  // Manejar la subida de archivos
+  /* =====================================================================
+     SUBIDA DE ARCHIVOS
+     - El drag&drop HTML5 (dragover/drop) no dispara con touch en mobile.
+     - Antes el área "dragDropArea" no tenía forma de abrirse al tocarla;
+       ahora también abre el selector de archivos con un tap o con
+       Enter/Espacio desde el teclado.
+     ===================================================================== */
   uploadBtn.addEventListener("click", () => {
     fileInput.click();
   });
 
   fileInput.addEventListener("change", (e) => {
     handleFiles(e.target.files);
+    fileInput.value = ""; // permite volver a elegir el mismo archivo después
+  });
+
+  dragDropArea.addEventListener("click", () => {
+    fileInput.click();
+  });
+
+  dragDropArea.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      fileInput.click();
+    }
   });
 
   dragDropArea.addEventListener("dragover", (e) => {
@@ -252,40 +378,47 @@ function stopAudio() {
 
       listItem.className = "playlist-item";
       fileName.textContent = file.name;
-      removeBtn.textContent = "Remove";
+      removeBtn.textContent = "Eliminar";
       removeBtn.className = "remove-btn";
+      removeBtn.setAttribute("aria-label", `Eliminar ${file.name}`);
 
       listItem.appendChild(fileName);
       listItem.appendChild(removeBtn);
 
       removeBtn.addEventListener("click", (e) => {
         e.stopPropagation();
-        Swal.fire({
-          title: "¿Estás seguro?",
-          text: `¿Quieres eliminar ${file.name}?`,
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonText: "¡Sí, elimínalo!",
-          cancelButtonText: "No, cancelar",
-        }).then((result) => {
-          if (result.isConfirmed) {
-            listItem.remove();
-            URL.revokeObjectURL(fileURL);
-            if (fileURL === currentMediaURL) {
-              currentMediaItem = null;
-              currentMediaURL = "";
-              videoPlayer.src = "";
-              videoPlayer.hidden = true;
-              imageDisplay.hidden = true;
-              audioPlayer.src = "";
-              audioPlayer.hidden = true;
-              syncWithSecondScreen("stop");
-            }
-            playlistItems = playlistItems.filter(
-              (item) => item.url !== fileURL
-            );
+        const confirmAndRemove = () => {
+          listItem.remove();
+          URL.revokeObjectURL(fileURL);
+          if (fileURL === currentMediaURL) {
+            currentMediaItem = null;
+            currentMediaURL = "";
+            videoPlayer.src = "";
+            videoPlayer.hidden = true;
+            imageDisplay.hidden = true;
+            audioPlayer.src = "";
+            audioPlayer.hidden = true;
+            syncWithSecondScreen("stop");
           }
-        });
+          playlistItems = playlistItems.filter(
+            (item) => item.url !== fileURL
+          );
+        };
+
+        if (window.Swal) {
+          Swal.fire({
+            title: "¿Estás seguro?",
+            text: `¿Quieres eliminar ${file.name}?`,
+            icon: "warning",
+            showCancelButton: true,
+            confirmButtonText: "¡Sí, elimínalo!",
+            cancelButtonText: "No, cancelar",
+          }).then((result) => {
+            if (result.isConfirmed) confirmAndRemove();
+          });
+        } else if (confirm(`¿Quieres eliminar ${file.name}?`)) {
+          confirmAndRemove();
+        }
       });
 
       listItem.addEventListener("click", () => {
@@ -303,7 +436,16 @@ function stopAudio() {
 
       // Si es el primer archivo agregado, lo mostramos automáticamente
       if (currentMediaURL === "") {
-        updateDisplay(fileURL, file.type.startsWith("video/") ? "video" : file.type.startsWith("audio/") ? "audio" : "image", file.name, listItem);
+        updateDisplay(
+          fileURL,
+          file.type.startsWith("video/")
+            ? "video"
+            : file.type.startsWith("audio/")
+            ? "audio"
+            : "image",
+          file.name,
+          listItem
+        );
       }
     }
   }
@@ -336,14 +478,33 @@ function stopAudio() {
 
     currentIndex = (currentIndex + 1) % playlistItems.length;
     const nextItem = playlistItems[currentIndex];
-    updateDisplay(nextItem.url, nextItem.type.startsWith("video/") ? "video" : nextItem.type.startsWith("audio/") ? "audio" : "image", nextItem.name, null);
+    updateDisplay(
+      nextItem.url,
+      nextItem.type.startsWith("video/")
+        ? "video"
+        : nextItem.type.startsWith("audio/")
+        ? "audio"
+        : "image",
+      nextItem.name,
+      null
+    );
   }
 
   function playPreviousItem() {
     if (playlistItems.length === 0) return;
 
-    currentIndex = (currentIndex - 1 + playlistItems.length) % playlistItems.length;
+    currentIndex =
+      (currentIndex - 1 + playlistItems.length) % playlistItems.length;
     const prevItem = playlistItems[currentIndex];
-    updateDisplay(prevItem.url, prevItem.type.startsWith("video/") ? "video" : prevItem.type.startsWith("audio/") ? "audio" : "image", prevItem.name, null);
+    updateDisplay(
+      prevItem.url,
+      prevItem.type.startsWith("video/")
+        ? "video"
+        : prevItem.type.startsWith("audio/")
+        ? "audio"
+        : "image",
+      prevItem.name,
+      null
+    );
   }
 });
