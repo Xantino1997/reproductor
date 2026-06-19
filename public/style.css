@@ -202,18 +202,24 @@ button:focus-visible,
   text-align: center;
 }
 
+.second-screen-section > div,
+.second-screen-section {
+  flex-wrap: wrap;
+}
+
+#activateSecondScreenBtn,
+#voiceCmdBtn {
+  width: 100%;
+  max-width: 320px;
+}
+
 .playlist-section h3 {
   color: var(--accent);
   font-size: 17px;
   letter-spacing: 0.02em;
 }
 
-#activateSecondScreenBtn {
-  width: 100%;
-  max-width: 320px;
-}
-
-/* Estado del botón de segunda pantalla, controlado por JS */
+/* Estado de los botones de segunda pantalla / voz, controlado por JS */
 .btn-active {
   background-color: var(--success);
   color: #0b1f12;
