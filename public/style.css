@@ -1,247 +1,433 @@
-/* Global Styles */
-body {
+/* ===========================================================
+   DESIGN TOKENS
+   =========================================================== */
+:root {
+  --bg: #11121a;
+  --surface: #1b1d2a;
+  --surface-2: #242737;
+  --surface-3: #2e3245;
+  --border: rgba(255, 255, 255, 0.08);
+
+  --primary: #5b6eea;
+  --primary-dark: #4350c4;
+  --accent: #ff8a3d;
+  --accent-dark: #e96f1f;
+  --ticker: #00c8ff;
+  --danger: #f4475f;
+  --danger-dark: #d12e45;
+  --success: #4ade80;
+
+  --text: #f4f5fb;
+  --text-muted: #9097b3;
+
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+
+  --touch-target: 48px;
+
+  --shadow-soft: 0 4px 16px rgba(0, 0, 0, 0.35);
+  --shadow-glow-accent: 0 0 18px rgba(255, 138, 61, 0.35);
+  --shadow-glow-primary: 0 0 18px rgba(91, 110, 234, 0.35);
+
+  --ff-display: "Poppins", "Segoe UI", Arial, sans-serif;
+  --ff-body: "Inter", "Segoe UI", Arial, sans-serif;
+}
+
+/* ===========================================================
+   RESET / BASE (mobile-first)
+   =========================================================== */
+* {
   box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
   margin: 0;
-  font-family: Arial, sans-serif;
-  background-color: #f0f0f0;
-  color: #333;
+  min-height: 100svh;
+  font-family: var(--ff-body);
+  background: radial-gradient(circle at 20% -10%, #1d2036 0%, var(--bg) 55%);
+  color: var(--text);
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
 }
 
 h2,
 h3 {
-  color: #333;
-}
-/* Estilo para el botón activo (pantalla 2 activa) */
-.btn-active {
-  background-color: green;
-  color: white;
+  font-family: var(--ff-display);
+  color: var(--text);
+  margin: 0;
 }
 
-/* Estilo para el botón inactivo (pantalla 2 inactiva) */
-.btn-inactive {
-  background-color: initial; /* Cambia a tu color estándar */
-  color: initial; /* Cambia a tu color estándar */
+button {
+  font-family: var(--ff-body);
+  font-size: 15px;
 }
 
+/* Visible focus state for keyboard + accessibility */
+button:focus-visible,
+.drag-drop-area:focus-visible {
+  outline: 3px solid var(--ticker);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===========================================================
+   LAYOUT SHELL
+   =========================================================== */
 .player-container {
+  position: relative;
+  text-align: center;
+}
+
+.visor {
+  width: 100%;
   display: flex;
-  justify-content: space-between;
-  padding: 20px;
-  background-color: #4a51cf;
-}
-
-
-.visor{
-  width: 100%;
   align-items: center;
-  text-align: center;
-  color: transparent;
-  font-weight: bold;
-}
-.upload-section,
-.playlist-section {
-  padding: 2px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  align-items: center;
-}
-.playlist-section {
-  padding: 2px;
-  border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  width: 100%;
-  align-items: center;
-}
-.drag-section {
-  text-align: center;
-  background-color: #4a51cf;
-  color: #fff;
-  font-weight: bold;
-}
-.second-screen-section {
-  margin-bottom: 20px;
-  width: 100%;
-  text-align: center;
-  background:#eee;
-}
-.upload-section h2,
-.playlist-section h3 {
-  color: orange;
-  margin-bottom: 20px;
-  width: 100%;
-  text-align: center;
-}
-
-.playlist-section {
-  padding: 20px;
-  width: 15em;
-  height: 30em;
-  overflow: auto;  
-  border-radius: 0px;
-  background-color:#8a8b9c;
-  box-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
-}
-
-.media-display {
-  width: 800px; /* Establece un ancho fijo */
-  height: 32em; /* Establece una altura fija */
-  position: relative; /* Permite posicionar los elementos hijos */
-  overflow: hidden; /* Oculta el contenido que se desborda del contenedor */
-  border: 2px solid #000; /* Opcional: agrega un borde para mejor visualización */
-  background-color: #000; /* Opcional: color de fondo para el área de visualización */
-}
-
-
-.media-display video,
-.media-display img {
-  width: 100%; /* Ajusta el ancho del video o imagen al ancho del contenedor */
-  height: 100%; /* Ajusta la altura del video o imagen al alto del contenedor */
-  object-fit: cover; /* Ajusta el contenido para cubrir el área del contenedor sin deformar la relación de aspecto */
+  justify-content: center;
+  min-height: 36px;
+  padding: var(--space-2) var(--space-4);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
 }
 
 .reproductor-buttons {
   width: 100%;
   display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: #333;
-  margin-right: 0px;
-
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  background: linear-gradient(180deg, #1a1c29 0%, #15161f 100%);
 }
 
-
-button {
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  background-color: #eb8e38; /* Color de fondo al pasar el mouse */
-  box-shadow: 0 0 15px rgba(255, 105, 0, 0.6); /* Efecto de resplandor */
+/* ===========================================================
+   MEDIA DISPLAY
+   =========================================================== */
+.media-display {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 70vh;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background-color: #000;
+  box-shadow: var(--shadow-soft);
 }
 
-button:hover {
-  background-color:orange;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: all 0.3s ease; 
-}
-.uploadBtn:hover{
-  background-color:#5fd12e;
-  margin-top:5px;
-  color: white;
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: all 0.3s ease; 
-  font-weight: bold;
+.media-display video,
+.media-display img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: #000;
 }
 
-
-.uploadBtn {
-  margin-top:7px;
-  background-color: red; /* Color de fondo al pasar el mouse */
-  color: #fff; /* Color del texto al pasar el mouse */
-  box-shadow: 0 0 15px rgba(255, 0, 0, 0.6); /* Efecto de resplandor */
-  font-weight: bold;
-}
-
-.drag-drop-area {
-  border: 2px dashed #007bff;
-  border-radius: 10px;
-  padding: 40px;
+/* ===========================================================
+   SCROLLING TICKER
+   =========================================================== */
+.scrolling-message {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.85);
+  color: var(--ticker);
   text-align: center;
-  color: #fff;
-  margin-bottom: 20px;
-  transition: background-color 0.3s ease;
-}
-.drag-drop-area:hover {
-  border: 2px dashed red;
-  border-radius: 10px;
-  background-color: #eff;
-  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  padding: var(--space-1) 0;
+  font-size: 13px;
 }
 
-.drag-drop-area.dragging {
-  background-color: #e6f7ff;
+.scrolling-message span {
+  display: inline-block;
+  padding-left: 100%;
+  animation: scroll-left 40s linear infinite;
+}
+
+@keyframes scroll-left {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+/* ===========================================================
+   PLAYLIST SECTION
+   =========================================================== */
+.playlist-section {
+  width: 100%;
+  height: auto;
+  max-height: 40vh;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-2);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  overflow: auto;
+}
+
+.second-screen-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+  text-align: center;
+}
+
+.playlist-section h3 {
+  color: var(--accent);
+  font-size: 17px;
+  letter-spacing: 0.02em;
+}
+
+#activateSecondScreenBtn {
+  width: 100%;
+  max-width: 320px;
+}
+
+/* Estado del botón de segunda pantalla, controlado por JS */
+.btn-active {
+  background-color: var(--success);
+  color: #0b1f12;
+  box-shadow: 0 0 14px rgba(74, 222, 128, 0.45);
+}
+
+.btn-inactive {
+  background-color: var(--surface-3);
+  color: var(--text-muted);
+  box-shadow: none;
 }
 
 ul {
   list-style-type: none;
   padding: 0;
- 
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
 }
 
 li {
-  padding: 10px;
-  background-color: #f9f9f9;
-  border-radius: 5px;
-  border: 1px solid #ddd;
-  margin-bottom: 5px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-style: italic;
-  font-weight: bold;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  background-color: var(--surface-3);
+  border: 1px solid var(--border);
+  font-style: normal;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text);
 }
 
 li button {
-  background-color: #dc3545;
-  color: white;
-  padding: 5px 10px;
+  flex-shrink: 0;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-3);
+  background-color: var(--danger);
+  box-shadow: none;
+}
+
+li button:hover,
+li button:active {
+  background-color: var(--danger-dark);
+}
+
+/* Drag & drop reordering states (clases puestas por JS) */
+.dragging {
+  opacity: 0.5;
+}
+
+.drag-over {
+  border: 2px dashed var(--ticker);
+}
+
+/* ===========================================================
+   BUTTONS (general)
+   =========================================================== */
+button {
+  color: var(--text);
+  min-height: var(--touch-target);
+  padding: 12px 22px;
   border: none;
-  border-radius: 5px;
+  border-radius: var(--radius-sm);
+  background-color: var(--primary);
+  box-shadow: var(--shadow-glow-primary);
   cursor: pointer;
-  transition: background-color 0.3s ease;
+  transition: background-color 0.2s ease, transform 0.15s ease;
 }
 
-li button:hover {
-  background-color: #c82333;
+button:hover {
+  background-color: var(--primary-dark);
 }
 
-/* Second Screen Overlay */
+button:active {
+  transform: scale(0.97);
+}
+
+.uploadBtn {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  display: block;
+  background-color: var(--accent);
+  color: #251200;
+  box-shadow: var(--shadow-glow-accent);
+  font-weight: 700;
+}
+
+.uploadBtn:hover {
+  background-color: var(--accent-dark);
+}
+
+/* ===========================================================
+   UPLOAD SECTION
+   =========================================================== */
+.upload-section {
+  padding: var(--space-4);
+}
+
+.upload-section h2 {
+  color: var(--accent);
+  margin-bottom: var(--space-4);
+  font-size: 18px;
+  text-align: center;
+}
+
+.drag-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  text-align: center;
+  padding: var(--space-4);
+  border-radius: var(--radius-md);
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.drag-drop-area {
+  width: 100%;
+  border: 2px dashed var(--primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.25s ease, border-color 0.25s ease;
+}
+
+/* En mobile el drag&drop real no existe: mostramos el texto de "tocar" */
+.drag-drop-area .dnd-desktop-text {
+  display: none;
+}
+
+.drag-drop-area .dnd-mobile-text {
+  display: inline;
+}
+
+.drag-drop-area:hover,
+.drag-drop-area:active {
+  border-color: var(--accent);
+  background-color: rgba(255, 138, 61, 0.08);
+}
+
+.drag-drop-area.dragging {
+  background-color: rgba(91, 110, 234, 0.15);
+  border-color: var(--ticker);
+}
+
+/* ===========================================================
+   SECOND SCREEN OVERLAY (ventana flotante / segunda pantalla)
+   =========================================================== */
 .second-screen {
-  position: absolute;
-  top: 50px;
-  left: 50px;
-  width: 300px;
-  height: 200px;
-  border: 2px solid #333;
-  background-color: #fff;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  position: fixed;
+  top: 5%;
+  left: 5%;
+  width: min(90vw, 360px);
+  height: min(60vh, 260px);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background-color: var(--surface);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.6);
   cursor: move;
   overflow: hidden;
   resize: both;
   z-index: 1000;
+  touch-action: none; /* permite que el JS maneje pointer/touch events para mover-redimensionar */
 }
 
 .second-screen-header {
-  background-color: #333;
-  color: white;
-  padding: 10px;
+  background-color: var(--surface-3);
+  color: var(--text);
+  padding: var(--space-3);
   cursor: move;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  font-size: 14px;
+  font-weight: 600;
 }
 
 .second-screen-header .close-btn {
   background: none;
   border: none;
-  color: white;
-  font-size: 20px;
+  color: var(--text);
+  font-size: 22px;
+  line-height: 1;
+  min-width: var(--touch-target);
+  min-height: var(--touch-target);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
+  box-shadow: none;
+  padding: 0;
+}
+
+.second-screen-header .close-btn:hover {
+  background-color: var(--danger);
 }
 
 .second-screen-content {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: calc(100% - 40px); /* Ajusta el espacio para el header */
-  padding: 10px;
+  height: calc(100% - 48px);
+  padding: var(--space-2);
+  background-color: #000;
 }
 
 .second-screen-content video,
@@ -250,133 +436,65 @@ li button:hover {
   max-height: 100%;
 }
 
-.dragging {
-  opacity: 0.5;
-}
+/* ===========================================================
+   BREAKPOINTS — de mobile hacia arriba
+   =========================================================== */
 
-.drag-over {
-  border: 2px dashed #ccc;
-}
-
-/* Adaptación para tabletas (pantallas entre 481px y 768px) */
-@media (max-width: 768px) {
-  .player-container {
-    flex-direction: column;
-    padding: 10px;
+/* Tablets en adelante: reproductor + playlist lado a lado */
+@media (min-width: 769px) {
+  .reproductor-buttons {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: var(--space-5);
+    padding: var(--space-5);
   }
 
   .media-display {
-    width: 100%; /* La visualización del media ocupa el 100% del ancho en tablets */
-    height: auto; /* Ajusta la altura para mantener la proporción */
+    flex: 1 1 auto;
+    max-height: none;
   }
 
   .playlist-section {
-    width: 100%; /* El playlist ocupará todo el ancho disponible */
-    height: auto; /* La altura se ajusta automáticamente */
+    flex: 0 0 280px;
+    max-height: 32em;
   }
 
-  .reproductor-buttons {
-    flex-direction: column;
-    padding: 5px;
+  .drag-drop-area .dnd-desktop-text {
+    display: inline;
   }
 
-  .upload-section {
-    width: 100%;
-    padding: 5px;
-  }
-
-  .drag-drop-area {
-    padding: 20px;
-    font-size: 14px;
-  }
-
-  button {
-    font-size: 14px;
-    padding: 8px 16px;
-  }
-
-  .second-screen {
-    width: 80%; /* Ajusta el ancho de la segunda pantalla al 80% del contenedor */
-    height: auto;
-    left: 10%; /* Centra la segunda pantalla */
-    top: 10%; /* Ajusta la posición desde la parte superior */
-  }
-
-  .second-screen-header {
-    padding: 5px;
-  }
-
-  .second-screen-content {
-    padding: 5px;
+  .drag-drop-area .dnd-mobile-text {
+    display: none;
   }
 }
 
-/* Adaptación para móviles (pantallas de hasta 480px) */
-@media (max-width: 480px) {
-  .player-container {
-    padding: 5px;
-    flex-direction: column;
-  }
-
-  .media-display {
-    width: 100%;
-    height: auto; /* Ajusta automáticamente la altura para mantener la proporción */
-  }
-
-  .playlist-section {
-    width: 100%;
-    height: auto; /* Permite que la lista de reproducción se ajuste automáticamente */
-    padding: 10px;
+/* Pantallas grandes: un poco más de aire */
+@media (min-width: 1100px) {
+  .reproductor-buttons {
+    max-width: 1200px;
+    margin: 0 auto;
   }
 
   .upload-section {
-    width: 100%;
-    padding: 5px;
+    max-width: 1200px;
+    margin: 0 auto;
   }
+}
 
-  .drag-section h2 {
-    font-size: 18px;
+/* Mobile chico: ajustes finos */
+@media (max-width: 380px) {
+  button {
+    font-size: 14px;
+    padding: 10px 16px;
   }
 
   .drag-drop-area {
-    padding: 10px;
-    font-size: 12px;
-  }
-
-  .reproductor-buttons {
-    flex-direction: column;
-    padding: 5px;
-  }
-
-  button {
-    font-size: 12px;
-    padding: 8px 12px;
-  }
-
-  ul {
-    font-size: 12px;
+    padding: var(--space-5) var(--space-3);
+    font-size: 13px;
   }
 
   li {
-    padding: 8px;
-  }
-
-  .second-screen {
-    width: 100%;
-    height: auto;
-    top: 5%;
-    left: 0;
-    right: 0;
-    margin: auto;
-  }
-
-  .second-screen-header {
-    padding: 5px;
-    font-size: 14px;
-  }
-
-  .second-screen-content {
-    padding: 5px;
-    font-size: 14px;
+    font-size: 13px;
+    padding: var(--space-2);
   }
 }
